@@ -1,0 +1,9 @@
+browser_profiles
+node_modules
+databases
+.vscode
+downloaded_content
+*.db
+packages
+build
+fa_gallery_downloader
