@@ -80,6 +80,7 @@ export async function setupBrowser() {
   const browser = await puppeteer.launch(opts);
   let page = await browser.pages().then(p => p[0]);
   page.setDefaultNavigationTimeout(0);
+  page.setDefaultTimeout(0);
   // Close program when main page is closed
   page.on('close', async () => {
     await db.close();

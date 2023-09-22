@@ -57,6 +57,13 @@ export async function getAllTweets() {
   // Return both
   return tweets;
 }
+export async function tweetExists(url) {
+  const exists = await db.get(`
+  SELECT EXISTS(SELECT 1 FROM twitterfaves
+  WHERE url = '${url}')
+  `);
+  return exists;
+}
 
 // POST Functions
 export async function saveTweet(data) {

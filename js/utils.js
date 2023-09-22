@@ -1,4 +1,3 @@
-import { faRequestHeaders, username } from './login.js';
 import * as cheerio from 'cheerio';
 import got from 'got';
 import { dirname, join, } from 'path';
@@ -24,7 +23,6 @@ export const stop = {
 
 // Get the main folder directory name
 export const __dirname = join(dirname(fileURLToPath(import.meta.url)), '../');
-// Page used to display messages to user
 let page = null;
 let version = '';
 
@@ -87,23 +85,6 @@ export async function waitFor(t = 1000) {
   return new Promise(r => setTimeout(r, t));
 }
 
-/**
- * Retrieves the HTML from the given URL and loads it into a Cheerio object.
- * @param {String} url 
- * @returns Loaded Cheerio Object
- */
-export function getHTML(url, sendHeaders = true) {
-  const headers = sendHeaders ? faRequestHeaders : {};
-  headers.timeout = { response: 3000 };
-  return got(url, headers).text()
-  .then((result) => {
-    console.log(`Loaded: ${url}`);
-    return cheerio.load(result);
-  }).catch((e) => {
-    console.error(e);
-    return Promise.reject(e);
-  });
-}
 /**
  * Checks Github for the latest version.
  * @returns {Object}
