@@ -72,7 +72,7 @@ async function getTweetData(tweet) {
     // Check media
     const images = Array.from($('img', selector.TWEET_MEDIA_SECTION));
     const video = $('video', selector.TWEET_MEDIA_SECTION).attr('src');
-    let media = images.map(m => m.src);
+    let media = images.map(m => m.src.replace('=small', '=large'));
     // If video exists and it's not mp4, make api call
     if (video && !/mp4$/i.test(video)) {
       data.media_json = JSON.stringify(media);
