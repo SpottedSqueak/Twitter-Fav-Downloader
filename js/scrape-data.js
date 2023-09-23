@@ -59,7 +59,7 @@ async function getTweetData(tweet) {
   const html = await tweet.evaluate((el) => el.innerHTML);
   const $ = cheerio.load(html);
   // Check if tweet is already saved
-  const url = $(selector.TWEET_URL).attr('href');
+  const url = $(selector.TWEET_URL).first().attr('href');
   if (url && !!db.tweetExists(url)) {
     // Gather data
     data = {
