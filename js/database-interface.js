@@ -22,12 +22,12 @@ const defaultColumns = [
 ];
 
 // General Functions
-function genericInsert({ table = 'twitterfaves', columns = defaultColumns, placeholders = defaultColumns.map(() => '?'), dataObj }) {
-  const data = defaultColumns.map(c => dataObj[c] || null);
+function genericInsert({ table = 'twitterfaves', columns = defaultColumns, placeholders = defaultColumns.map(() => '?'), data }) {
+  const arr = defaultColumns.map(c => data[c] || null);
   return db.run(`
   INSERT OR IGNORE INTO ${table} (${columns})
   VALUES (${placeholders.join(',')})
-`, ...data);
+`, ...arr);
 }
 export async function close() {
   return db.close();
@@ -65,8 +65,18 @@ export async function tweetExists(url) {
   return exists;
 }
 
+export async function getMediaToDownload() {
+  return db.all(`
+  SELECT url, media_json FROM twitterfaves
+  where is_media_downloaded = 0
+  `);
+}
+
 // POST Functions
 export async function saveTweet(data) {
+  data.is_fav = true;
+  await updateTweet(data);
+  data.is_qrt = false;
   return genericInsert({ data });
 }
 
@@ -92,12 +102,20 @@ export async function saveQRTweet(data) {
   return genericInsert({ data });
 }
 
+export async function setMediaDownloaded(url) {
+  return db.run(`
+  UPDATE twitterfaves
+  SET
+    is_media_downloaded = 1
+  WHERE url = '${url}'
+  `);
+}
 /**
  * Creates appropriate database tables.
  * @returns 
  */
 export async function init() {
-  fs.ensureFileSync(dbLocation);
+  await fs.ensureFile(dbLocation);
   sqlite3.verbose();
   db = await open({
     filename: dbLocation,

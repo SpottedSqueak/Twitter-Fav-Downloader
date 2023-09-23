@@ -18,7 +18,8 @@ export async function upgradeDatabase(db) {
         qrt_url TEXT,
         media_json TEXT,
         is_fav INTEGER DEFAULT 1,
-        is_qrt INTEGER DEFAULT 0
+        is_qrt INTEGER DEFAULT 0,
+        is_media_downloaded INTEGER 0
       )`);
       version = 2;
     default:

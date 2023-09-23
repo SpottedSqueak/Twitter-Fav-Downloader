@@ -41,3 +41,47 @@ export const TWEET_MEDIA = '[data-test-id="tweetPhoto"]';
 
 // JS
 export const SCROLL_HEIGHT = 'document.documentElement.scrollTop';
+export const VXTWITTER_API = 'https://api.vxtwitter.com/';
+/**
+ * Example JSON:
+ * {
+    "date": "Wed Oct 05 18:40:30 +0000 2022",
+    "date_epoch": 1664995230,
+    "hashtags": [],
+    "likes": 21664,
+    "mediaURLs": [
+        "https://video.twimg.com/tweet_video/FeU5fh1XkA0vDAE.mp4",
+        "https://pbs.twimg.com/media/FeU5fhPXkCoZXZB.jpg"
+    ],
+    "media_extended": [
+        {
+            "altText": "GIF of Laura Dern in Jurassic Park as Dr. Ellie Sattler taking off her sunglasses in shock",
+            "duration_millis": 0,
+            "size": {
+                "height": 206,
+                "width": 194
+            },
+            "thumbnail_url": "https://pbs.twimg.com/tweet_video_thumb/FeU5fh1XkA0vDAE.jpg",
+            "type": "video",
+            "url": "https://video.twimg.com/tweet_video/FeU5fh1XkA0vDAE.mp4"
+        },
+        {
+            "altText": "picture of Kermit doing a one legged stand on a bicycle seat riding through the park",
+            "size": {
+                "height": 1007,
+                "width": 1179
+            },
+            "thumbnail_url": "https://pbs.twimg.com/media/FeU5fhPXkCoZXZB.jpg",
+            "type": "image",
+            "url": "https://pbs.twimg.com/media/FeU5fhPXkCoZXZB.jpg"
+        }
+    ],
+    "replies": 2911,
+    "retweets": 3229,
+    "text": "whoa, it works\n\nnow everyone can mix GIFs, videos, and images in one Tweet, available on iOS and Android https://t.co/LVVolAQPZi",
+    "tweetID": "1577730467436138524",
+    "tweetURL": "https://twitter.com/Twitter/status/1577730467436138524",
+    "user_name": "Twitter",
+    "user_screen_name": "Twitter"
+}
+ */
