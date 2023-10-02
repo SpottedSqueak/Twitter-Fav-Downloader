@@ -36,7 +36,7 @@ export const TWEET_DATE = '[data-test-id="User-Name"] > div:nth-child(2) > div >
 export const TWEET_URL = '[data-test-id="User-Name"] > div:nth-child(2) > div > div:nth-child(3) a';
 export const TWEET_TEXT = '[data-test-id="tweetText"]';
 export const TWEET_MEDIA_SECTION = 'div[aria-labelledby] > div:first-child';
-export const TWEET_QRT_SECTION = 'div[aria-labelledby] > div:nth-child(2)';
+export const HAS_QRT = `${TWEET_MEDIA_SECTION} time`;
 export const TWEET_MEDIA = '[data-test-id="tweetPhoto"]';
 
 // JS

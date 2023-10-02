@@ -1,4 +1,3 @@
-import * as cheerio from 'cheerio';
 import got from 'got';
 import { dirname, join, } from 'path';
 import { fileURLToPath } from 'url';

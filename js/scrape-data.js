@@ -1,10 +1,13 @@
 import * as db from './database-interface.js';
-import * as selector from './constants.js';
+import * as sel from './constants.js';
 import * as cheerio from 'cheerio';
 import got from 'got';
-
+import * as cliProgress from 'cli-progress';
+import fs from 'fs-extra';
 import { join } from 'node:path';
 import { Page } from 'puppeteer-core';
+import { waitFor } from './utils.js';
+import random from 'random';
 
 const scrollHeight = 1000;
 let headers = {
@@ -12,37 +15,93 @@ let headers = {
     cookies: '',
   }
 };
-let currMediaToDownload = [];
+const dlOptions = {
+  mode: fs.constants.S_IRWXO,
+};
+let pBar = null;
+let mediaTotal = 0;
+let mediaIndex = 0;
+let isDownloading = false;
 
 async function getTweetDataViaAPI(url, defaultData) {
-  const apiUrl = `${selector.VXTWITTER_API}${url.split('.com/')[1]}`;
+  const apiUrl = `${sel.VXTWITTER_API}${url.split('.com/')[1]}`;
   const json = await got(apiUrl).json().catch((e) => {
     console.error(e);
     return false;
   });
   if (json) {
     return {
-      url,
+      url: json.tweetURL,
       displayname: json.user_screen_name,
       username: json.user_name,
       date_posted: json.date,
       text: json.text,
       media_json: JSON.stringify(json.mediaURLs),
+      qrt_url: qrtURL,
     };
   }
   return defaultData;
 }
 
-async function downloadMedia() {
+function updateProgressBar(index, total) {
+  // Create bar if not already active
+  if (!pBar) {
+    pBar = new cliProgress.SingleBar({
+      hideCursor: true,
+      format: ' {bar} | {filename} | {value}/{total}',
+    }, cliProgress.Presets.shades_grey);
+    pBar.start(total, index);
+  } else {
+    // Update totals
+    pBar.update(index);
+    if (total) pBar.setTotal(total);
+  }
+}
+async function initiateMediaDownloads() {
   // If already downloading something, leave it be
-  if (currMediaToDownload.length) return;
+  if (isDownloading) return;
+  isDownloading = true;
+  await fs.ensureDir(sel.DOWNLOAD_DIR, dlOptions);
   // Get new media to download
+  const allMedia = await db.getMediaToDownload();
+  if (!allMedia.length) return isDownloading = false;
+  // Update total if new amount is more than previous
+  mediaTotal = allMedia.length > mediaTotal ? allMedia.length : mediaTotal;
+  // Update progress bar
+  updateProgressBar(mediaIndex, mediaTotal);
+  const { url, media_json } = allMedia[0];
+  const mediaArr = JSON.parse(media_json);
+  let hasFailed = false;
   // Loop through media to save
-    // save to DL folder
-  
-  // Mark as complete when done
-  // Call again to loop
-
+  for (const m of mediaArr) {
+    const content_name = m.split('/').pop();
+    const fileLocation = join(sel.DOWNLOAD_DIR, content_name);
+      // save to DL folder
+      await new Promise((resolve, reject) => {
+        const dlStream = got.stream(m, headers);
+        const fStream = fs.createWriteStream(fileLocation, { flags: 'w+', mode: fs.constants.S_IRWXO });
+        dlStream.on('error', (error) => {
+          console.error(`Download failed: ${error.message} for ${content_name}`);
+        });
+        fStream.on('error', (error) => {
+          console.error(`Could not write file '${content_name}' to system: ${error.message}`);
+          reject();
+        })
+        .on('finish', () => {
+          resolve();
+        });
+        dlStream.pipe(fStream);
+      }).catch((e) => {
+        fs.removeSync(fileLocation);
+        hasFailed = true;
+      });
+      if (hasFailed) break;
+  }
+  if (!hasFailed) {
+    await db.setMediaDownloaded(url);
+  }
+  isDownloading = false;
+  return initiateMediaDownloads();
 }
 
 async function getQRTweetData(url) {
@@ -52,6 +111,7 @@ async function getQRTweetData(url) {
     // Save tweet data
     await db.saveQRTweet(data);
   }
+  return data;
 }
 
 async function getTweetData(tweet) {
@@ -59,34 +119,42 @@ async function getTweetData(tweet) {
   const html = await tweet.evaluate((el) => el.innerHTML);
   const $ = cheerio.load(html);
   // Check if tweet is already saved
-  const url = $(selector.TWEET_URL).first().attr('href');
+  const url = $(sel.TWEET_URL).first().attr('href');
   if (url && !!db.tweetExists(url)) {
     // Gather data
     data = {
       url,
-      displayname: $(selector.TWEET_DISPLAYNAME).first().text(),
-      username: $(selector.TWEET_USERNAME).first().text(),
-      date_posted: $(selector.TWEET_DATE).first().attr('datetime'),
-      text: $(selector.TWEET_TEXT).first().text(),
+      displayname: $(sel.TWEET_DISPLAYNAME).first().text(),
+      username: $(sel.TWEET_USERNAME).first().text(),
+      date_posted: $(sel.TWEET_DATE).first().attr('datetime'),
+      text: $(sel.TWEET_TEXT).first().text(),
     }
     // Check media
-    const images = Array.from($('img', selector.TWEET_MEDIA_SECTION));
-    const video = $('video', selector.TWEET_MEDIA_SECTION).attr('src');
+    const images = Array.from($('img', sel.TWEET_MEDIA_SECTION));
+    const videos = Array.from($('video', sel.TWEET_MEDIA_SECTION)).map(v => v.src);
     let media = images.map(m => m.src.replace('=small', '=large'));
-    // If video exists and it's not mp4, make api call
-    if (video && !/mp4$/i.test(video)) {
+    // Check if there's a qrt
+    const hasQRT = !!$(sel.HAS_QRT).length;
+    // If there's a QRT, just use the API, it's easier
+    if (hasQRT) {
+      data.media_json = JSON.stringify(media);
+      data = await getTweetDataViaAPI(url, data);
+      // Get QRT Info
+      const qrtData = await getQRTweetData(data.qrt_url);
+      // Correct QRT URL in original data
+      data.qrt_url = qrt.url;
+    }
+    // If video exists and it's not mp4 (not easily downloaded), make api call
+    else if (videos && !videos.every(v => /mp4$/i.test(v))) {
       data.media_json = JSON.stringify(media);
       data = await getTweetDataViaAPI(url, data);
       media = JSON.parse(data.media_json);
     } else {
-      if (video) media.push(video);
+      media.push(videos);
       data.media_json = JSON.stringify(media);
     }
-    await downloadMedia(media);
-    // Get QRT Info
-    await getQRTweetData();
-    // Save Tweet
-    db.saveTweet(data); 
+    db.saveTweet(data);
+    initiateMediaDownloads();
   }
 }
 
@@ -105,15 +173,16 @@ export async function init(page) {
   parseCookies(await page.cookies());
   // Start looping through favorites, scrolling down bit by bit
   while (scrollCount === 0 || newScrollHeight !== oldScrollHeight) {
+    await waitFor(random.int(1000, 4000));
     // Get all current tweets
-    const tweets = await page.$$(selector.TWEET_SELECTOR);
+    const tweets = await page.$$(sel.TWEET_SELECTOR);
     for (const tweet of tweets) {
       await getTweetData(tweet);
     }
     // Loop
     scrollCount++;
-    oldScrollHeight = await page.evaluate(selector.SCROLL_HEIGHT);
+    oldScrollHeight = await page.evaluate(sel.SCROLL_HEIGHT);
     await page.evaluate(`window.scrollTo(0, ${scrollHeight*scrollCount})`);
-    newScrollHeight = await page.evaluate(selector.SCROLL_HEIGHT);
+    newScrollHeight = await page.evaluate(sel.SCROLL_HEIGHT);
   }
 }

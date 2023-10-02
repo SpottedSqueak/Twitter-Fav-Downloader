@@ -8,10 +8,6 @@ async function init() {
   await db.init();
   const { page } = await setupBrowser();
   await initUtils(page);
-
-  page.on('domcontentloaded', async() => {
-
-  });
   // Login to Twitter logic
   await Promise.all([
     page.goto(TWITTER_HOME),
