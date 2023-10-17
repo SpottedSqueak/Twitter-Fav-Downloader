@@ -18,10 +18,13 @@ let headers = {
 const dlOptions = {
   mode: fs.constants.S_IRWXO,
 };
+
 let pBar = null;
 let mediaTotal = 0;
 let mediaIndex = 0;
 let isDownloading = false;
+// Default current account
+let account = '';
 
 async function getTweetDataViaAPI(url, defaultData) {
   const apiUrl = `${sel.VXTWITTER_API}${url.split('.com/')[1]}`;
@@ -107,7 +110,8 @@ async function initiateMediaDownloads() {
 async function getQRTweetData(url) {
   let data = {};
   if (url) {
-    data = await getTweetDataViaAPI(url, data);
+    data = await getTweetDataViaAPI(url);
+    if (!data) return data;
     // Save tweet data
     await db.saveQRTweet(data);
   }
@@ -122,12 +126,13 @@ async function getTweetData(tweet) {
   const url = $(sel.TWEET_URL).first().attr('href');
   if (url && !!db.tweetExists(url)) {
     // Gather data
+    const tweetLinks = $(sel.TWEET_LINKS).first().attr('href') || '';
     data = {
       url,
       displayname: $(sel.TWEET_DISPLAYNAME).first().text(),
       username: $(sel.TWEET_USERNAME).first().text(),
       date_posted: $(sel.TWEET_DATE).first().attr('datetime'),
-      text: $(sel.TWEET_TEXT).first().text(),
+      text: `${$(sel.TWEET_TEXT).first().text()} ${tweetLinks}`,
     }
     // Check media
     const images = Array.from($('img', sel.TWEET_MEDIA_SECTION));
@@ -139,10 +144,12 @@ async function getTweetData(tweet) {
     if (hasQRT) {
       data.media_json = JSON.stringify(media);
       data = await getTweetDataViaAPI(url, data);
-      // Get QRT Info
-      const qrtData = await getQRTweetData(data.qrt_url);
-      // Correct QRT URL in original data
-      data.qrt_url = qrt.url;
+      if (data) {
+        // Get QRT Info
+        const qrtData = await getQRTweetData(data.qrt_url);
+        // Correct QRT URL in original data
+        data.qrt_url = qrt.url;
+      }
     }
     // If video exists and it's not mp4 (not easily downloaded), make api call
     else if (videos && !videos.every(v => /mp4$/i.test(v))) {
@@ -153,6 +160,9 @@ async function getTweetData(tweet) {
       media.push(videos);
       data.media_json = JSON.stringify(media);
     }
+    // Add current account name
+    data.account = account;
+    // Save and start downloads
     db.saveTweet(data);
     initiateMediaDownloads();
   }
@@ -171,6 +181,8 @@ export async function init(page) {
   let oldScrollHeight = 0;
   let newScrollHeight = 0;
   parseCookies(await page.cookies());
+  // Get account name
+  account = await page.$(sel.ACCOUNT_NAME)?.textContent?.split('@')[0];
   // Start looping through favorites, scrolling down bit by bit
   while (scrollCount === 0 || newScrollHeight !== oldScrollHeight) {
     await waitFor(random.int(1000, 4000));

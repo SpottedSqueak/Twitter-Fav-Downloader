@@ -28,17 +28,18 @@ export const DB_LOCATION = `${INTERNAL_DIR_BASE}/databases/defaultDB.db`;
 export const RELEASE_CHECK = 'https://github.com/SpottedSqueak/Twitter-Fav-Downloader/releases';
 
 // Query Selectors
+export const ACCOUNT_NAME = 'div[aria-label="Account menu"]';
 export const TWEET_SELECTOR = '[aria-label^="Timeline:"] article';
-export const TWEET_ICON = '[data-test-id="Tweet-User-Avatar"]';
-export const TWEET_DISPLAYNAME = '[data-test-id="User-Name"] > div:first-child';
-export const TWEET_USERNAME = '[data-test-id="User-Name"] > div:nth-child(2) > div > div:first-child';
-export const TWEET_DATE = '[data-test-id="User-Name"] > div:nth-child(2) > div > div:nth-child(3) time';
-export const TWEET_URL = '[data-test-id="User-Name"] > div:nth-child(2) > div > div:nth-child(3) a';
-export const TWEET_TEXT = '[data-test-id="tweetText"]';
+export const TWEET_ICON = '[data-testid="Tweet-User-Avatar"]';
+export const TWEET_DISPLAYNAME = '[data-testid="User-Name"] > div:first-child';
+export const TWEET_USERNAME = '[data-testid="User-Name"] > div:nth-child(2) > div > div:first-child';
+export const TWEET_DATE = '[data-testid="User-Name"] > div:nth-child(2) > div > div:nth-child(3) time';
+export const TWEET_URL = '[data-testid="User-Name"] > div:nth-child(2) > div > div:nth-child(3) a';
+export const TWEET_TEXT = '[data-testid="tweetText"]';
 export const TWEET_MEDIA_SECTION = 'div[aria-labelledby] > div:first-child';
 export const HAS_QRT = `${TWEET_MEDIA_SECTION} time`;
-export const TWEET_MEDIA = '[data-test-id="tweetPhoto"]';
-
+export const TWEET_MEDIA = '[data-testid="tweetPhoto"]';
+export const TWEET_LINKS = `[data-testid="card.wrapper"] a`;
 // JS
 export const SCROLL_HEIGHT = 'document.documentElement.scrollTop';
 export const VXTWITTER_API = 'https://api.vxtwitter.com/';

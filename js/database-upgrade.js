@@ -10,6 +10,7 @@ export async function upgradeDatabase(db) {
     case 1:
       await db.exec(`
       CREATE TABLE IF NOT EXISTS twitterfaves (
+        account TEXT,
         url TEXT UNIQUE ON CONFLICT IGNORE,
         displayname TEXT,
         username TEXT,

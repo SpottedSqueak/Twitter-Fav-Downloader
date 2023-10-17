@@ -10,6 +10,7 @@ import { upgradeDatabase } from './database-upgrade.js';
  */
 let db = null;
 const defaultColumns = [
+  'account',
   'url',
   'displayname',
   'username',
